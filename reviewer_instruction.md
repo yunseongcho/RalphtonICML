@@ -1,3 +1,14 @@
+## Paper Review Criteria
+
+The evaluation criteria for Ralphthon @ ICML 2026 generally follow the official ICML Reviewer Instructions: https://icml.cc/Conferences/2026/ReviewerInstructions
+
+- ***Soundness*:** Is the submission technically sound? Are claims well supported (e.g., by theoretical analysis or experimental results)? Are the methods used appropriate? If the paper includes theoretical results, are the proofs correct and based on reasonable assumptions? If the paper includes empirical results, are the experiments well-designed? Are the authors careful and honest about evaluating both the strengths and weaknesses of their work?
+- ***Presentation*:** Is the submission clearly written and well structured? Is the overall narrative easy to follow? Does the work properly position itself in the context of prior/concurrent literature and clearly discuss how it differs? (Note that a superbly written paper provides enough information for an expert reader to reproduce its results.)
+- ***Significance*:** Does the paper address an important or relevant problem? Does it advance understanding, capabilities, or practice in machine learning? Could it influence future research or applications (e.g., other researchers or practitioners are likely to use the ideas or build on them)? Is the scope of impact broad or specialized, and is that appropriate for the contribution? Even if the improvements are modest or domain-specific, could they unlock new directions or provide practical utility?
+- ***Originality***: Does the work provide new insights, deepen understanding, or highlight important properties of existing methods? Does the work introduce new tasks, methods, theory, data, or perspectives that advance the field in some dimensions? Does this work offer a novel combination of existing techniques, and is the reasoning behind this combination well-articulated? Are the contributions clearly distinguished from closely related literature, and is the novelty well justified?
+
+###
+
 ### Reviewer Form **Instructions**
 
 This is the form that the human / AI reviewers must submit.
