@@ -2,6 +2,11 @@
 
 ## Summary
 
+- 이 문서에서 구현하는 review pipeline 자체가 Track 2입니다. 별도의 부가
+  workflow를 만들지 않고, 최종 Track 1 논문과 기존 증거를 hash로 고정한 뒤
+  Review Agent가 읽기 전용으로 평가하여 Track 2 review 결과를 생성합니다.
+- Track 2는 Track 1 논문을 수정하거나 새로운 실험 결과를 생성·추측하지 않습니다.
+  외부 증거가 없거나 주장 검증이 불가능하면 review에 증거 부족으로 표시합니다.
 - `fast-v1` pipeline을 기본으로 추가합니다.
 - 논문당 기본 호출을 `31 → 5회`로 줄입니다.
   - Extraction 2회 병렬
@@ -11,6 +16,90 @@
 - `codex exec`만 생성 backend로 사용하며 local LLM, `--oss`, `--local-provider`, session resume은 사용하지 않습니다.
 - 사용자가 선택한 방식에 따라 dense embedding은 도입하지 않고, lexical top-8 memory 후보를 기존 reviewer/author call 안에서 Codex가 semantic reranking합니다. 따라서 별도 retrieval call은 없습니다.
 - 기본 병렬도는 `paper_workers=4`, 전체 `codex_concurrency=4`, hard deadline은 1,800초입니다.
+
+## Track 2 Review Agent 실행 준비
+
+### 준비할 입력
+
+- 최종 Track 1 논문: PDF 또는 Markdown
+- 기존 증거 자료: 실험 결과, 표, 로그, 코드 버전 등
+- 원하는 Review Agent 이름
+- 리뷰 결과 파일명
+
+논문만 있고 별도 증거가 없다면 논문만으로 진행할 수 있지만, 검증할 수
+없는 주장은 리뷰에서 증거 부족으로 표시해야 합니다.
+
+### 진행 순서
+
+1. 논문과 증거를 작업공간에 넣습니다.
+
+```text
+track2/
+├── inputs/
+│   └── paper.pdf
+├── evidence/
+│   └── results.json
+└── outputs/
+```
+
+2. 파일 hash를 계산해 입력을 고정합니다.
+
+macOS에서는 다음 명령을 사용합니다.
+
+```bash
+shasum -a 256 track2/inputs/paper.pdf
+shasum -a 256 track2/evidence/results.json
+```
+
+GNU/Linux 또는 GNU Coreutils가 설치된 환경에서는 동일하게 다음 명령을
+사용할 수 있습니다.
+
+```bash
+sha256sum track2/inputs/paper.pdf
+sha256sum track2/evidence/results.json
+```
+
+3. 템플릿을 `review-agent.md`로 복사합니다.
+
+```bash
+cp skills/auto-research/assets/track-2-agent-template.md \
+  track2/review-agent.md
+```
+
+`skills/auto-research/assets/track-2-agent-template.md`는 Track 2 실행 전에
+repository에 추가되어 있어야 하며, 없으면 preflight에서 명시적으로 실패해야
+합니다.
+
+4. `review-agent.md`에 다음을 기록합니다.
+
+- 에이전트 이름과 버전
+- 논문 경로와 SHA-256
+- 증거 파일 경로와 SHA-256
+- 리뷰 결과 경로
+- 리뷰 지침과 출력 계약
+
+5. 고정된 입력만 사용해 리뷰를 실행하고 다음을 작성합니다.
+
+- Summary
+- Strengths
+- Weaknesses
+- Questions for the Authors
+- Contribution
+- Overall Recommendation
+- Confidence
+- Ethics and Limitations
+
+필수 산출물은 다음 두 파일입니다.
+
+```text
+track2/review-agent.md
+track2/outputs/review-result.md
+```
+
+Track 2-only에서는 새로운 실험, A100, VESSL, W&B가 필요하지 않습니다.
+논문을 수정하거나 존재하지 않는 실험을 추측해서도 안 됩니다. 입력 고정부터
+`review-agent.md` 작성과 최종 리뷰 생성까지 기존 논문과 증거만으로 진행할 수
+있습니다.
 
 ## Pipeline 및 Memory 변경
 

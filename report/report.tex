@@ -5,17 +5,18 @@
 \usepackage{amsmath}
 \usepackage{hyperref}
 \usepackage{url}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
 \usepackage{icml2026}
 
-\newcommand{\NA}{\texttt{N/A (not run)}}
-\icmltitlerunning{Multi-Agent Peer Review Improvement Loop}
+\icmltitlerunning{Iterative Agent-Team Updating for Peer Review}
 
 \begin{document}
 
 \twocolumn[
-  \icmltitle{Evidence-Grounded Multi-Agent Peer Review:\\
-  A Reproducible Author--Reviewer--Chair Improvement Loop}
-  \icmltitlerunning{Multi-Agent Peer Review Improvement Loop}
+  \icmltitle{Iterative Agent-Team Updating for Evidence-Grounded Peer Review:\\
+  Immutable Track 2 Execution and a 10-Paper Hosted Audit}
+  \icmltitlerunning{Iterative Agent-Team Updating for Peer Review}
 
   \begin{icmlauthorlist}
     \icmlauthor{Anonymous Authors}{anon}
@@ -28,210 +29,340 @@
 \printAffiliationsAndNotice{}
 
 \begin{abstract}
-We specify and audit an evidence-grounded, 14-agent paper-review pipeline built
-around the repository's nineteen context tasks and strict seven-field review
-form. The implementation separates extraction, specialist critique, synthesis,
-author rebuttal, and chair output; isolates reviewer and author memories; and
-keeps decisions out of paper-time requests. A public 20-case
-ReviewBench--ReviewRebuttal seed drives a leakage-safe, versioned calibration
-and memory loop. Canonical run \texttt{77771e943444d32dc716} verifies execution,
-convergence, best-state restoration, and one sealed test. It uses deterministic
-structural signals, not an LLM reviewer, and therefore provides pipeline
-evidence rather than reviewer-quality evidence.
+We present an end-to-end Track 2 workflow with two bounded loops: paper-time
+review refinement over immutable evidence, and offline, development-gated
+updating of the review agent team's operating state. The persistent loop
+iteratively selects train-only changes to rubric weights, score calibration,
+and role-separated retrieval memory; it does not fine-tune hosted model
+weights. The \texttt{fast-v1} paper-time path uses five base calls---two
+extractors, two reviewers, and one chair---plus a conditional two-call
+Author--Chair refinement. On a fixed ten-paper public benchmark, it produced
+10/10 schema- and evidence-valid reviews in 631.9 seconds with 54 calls and no
+retry, failure, or timeout. Its 2.93 MB of serialized requests is an 83.24\%
+reduction from a 17.50 MB counterfactual legacy serialization, but misses the
+registered 85\% target. A public-paper case study provides diagnostic process
+evidence; absent human ratings, neither loop establishes reviewer-quality
+improvement.
 \end{abstract}
 
-\section{Scope and Local Contracts}
+\section{Scope and Contract}
 
-The system is an offline research instrument for public review histories and
-author-authorized feedback. It is not permission to delegate a confidential or
-official ICML review to an LLM. ICML 2026 defines reviewer responsibilities and
-restricts LLM assistance~\cite{icml2026reviewer,icml2026llm}; the deployment
-boundary in Section~\ref{sec:limits} follows that policy.
+\paragraph{Track 2 boundary.}
+Here, Track 2 denotes the review operation itself, not a post-hoc wrapper around
+another pipeline. Its input is a final paper in PDF or Markdown and, optionally,
+pre-existing evidence such as result files, tables, logs, and code-version
+records. It neither edits the paper nor invents experiments. Claims that cannot
+be checked from the frozen bundle must be marked evidence-insufficient.
 
-\paragraph{Nineteen context tasks.}
-The authoritative \texttt{prompts.py} map has four groups. \emph{Main Paper}
-(4) contains Paper Summary, Supplemental Summary, Introduction, and Related
-Works. \emph{Methodology} (6) contains Preliminaries, Framework, Training,
-Proofs, Inference and Application, and Method Summary. \emph{Experiments} (7)
-contains Datasets, Implementation Details, Evaluation Metrics, Quantitative
-Results, Qualitative Results, Ablation Study, and Results Summary.
-\emph{Conclusion} (2) contains Limitations and Future Works and Conclusion.
-Each extraction request must return separate \texttt{ANSWER} and
-\texttt{SOURCES} sections.
+The implementation copies each input into a per-paper workspace, records its
+SHA-256, fixes the output path, and writes \path{review-agent.md}. PDF text
+extraction is also versioned and hashed. The resulting bundle digest binds the
+paper, evidence inventory, instructions, extractor, and output contract.
+Only these fixed inputs are visible to the review run. This realizes the
+preparation sequence specified in \path{plan.md} and prevents evidence from
+being silently added after review.
 
-The implemented parser wraps each extraction in an immutable
-\texttt{Evidence} record with task ID, answer, source strings, provenance, and
-a content-derived ID. \texttt{SharedContextStore} appends and deduplicates these
-records and returns frozen \texttt{ContextPacket} snapshots. Sources are still
-strings: page geometry, typed claims, issues, resolutions, and grounding checks
-are not implemented.
+\paragraph{Output contract.}
+The chair returns Summary, Strengths, Weaknesses, Questions for the Authors,
+Contribution, Overall Recommendation, Confidence, and Ethics and Limitations.
+The machine record additionally carries integer Soundness, Presentation,
+Significance, and Originality scores on 1--4 scales, Overall Recommendation on
+1--6, and Confidence on 1--5. Python validation rejects missing fields,
+out-of-range values, malformed lists, unknown evidence identifiers, and
+unregistered contradictions. The Markdown renderer preserves the requested
+human-facing sections.
 
-\paragraph{Strict final form.}
-Only the chair emits \texttt{ReviewOutput}: Soundness, Presentation,
-Significance, and Originality are integers 1--4; Overall Recommendation is
-1--6; Confidence is 1--5; and Comment is nonempty text. The Markdown parser
-requires the exact seven headings, order, blank-line structure, integer types,
-and ranges. It does not establish factual accuracy, evidence grounding, or
-comment quality. This is a repository-specific subset of the full ICML form.
+The system is restricted to public papers and author-authorized material. It
+must not process confidential submissions or private review discussion, nor
+submit generated text as an official review. These boundaries follow ICML's
+reviewer, LLM-use, and peer-review ethics policies
+~\cite{icml2026reviewer,icml2026llm,icml2026ethics}.
 
-\section{Team and Information Boundaries}
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[
+  node distance=3mm,
+  stage/.style={
+    draw=black!55,
+    rounded corners=1pt,
+    align=center,
+    font=\scriptsize,
+    minimum height=8mm,
+    inner sep=2pt,
+    fill=white
+  },
+  flow/.style={-{Latex[length=1.5mm]}, semithick, draw=black!65},
+  refine/.style={flow, draw=orange!85!black},
+  deploy/.style={flow, dashed, draw=blue!65!black}
+]
+% Paper-time Track 2.
+\node[stage,text width=19mm] (input)
+  {Public paper\\+ existing evidence};
+\node[stage,text width=21mm,right=of input] (freeze)
+  {Copy, SHA-256,\\agent manifest};
+\node[stage,text width=18mm,right=of freeze] (extract)
+  {Evidence\\extractors $E_1,E_2$};
+\node[stage,text width=21mm,right=of extract] (review)
+  {Independent\\reviewers $R_t,R_e$};
+\node[stage,text width=17mm,right=of review] (chair)
+  {Chair$_0$\\synthesis};
+\node[stage,text width=22mm,right=of chair] (output)
+  {Schema + evidence\\validated review};
+\foreach \a/\b in {input/freeze,freeze/extract,extract/review,review/chair,chair/output}
+  \draw[flow] (\a) -- (\b);
 
-The registry contains exactly 14 agents: five domain specialists
-(CV, Core ML, NLP, RecSys, General), six criterion specialists (Soundness,
-Presentation, Significance, Originality, Reproducibility, Ethics), one review
-synthesizer, one author, and one chair. A deterministic English/Korean keyword
-router selects at most two domain agents, using General only as fallback.
+\node[stage,text width=20mm,below=4mm of chair,xshift=-11mm] (challenge)
+  {Simulated Author\\challenge};
+\node[stage,text width=19mm,right=of challenge] (rechair)
+  {Chair$_1$\\re-review};
+\draw[refine] (chair.south) -- node[left,font=\tiny]{if selected} (challenge.north);
+\draw[refine] (challenge) -- (rechair);
+\draw[refine] (rechair.east) -| (output.south);
 
-\texttt{ReviewerOrchestrator} runs all nineteen extraction calls in a bounded
-pool, restores prompt order, and serializes the resulting packet. Routed domain
-and all criterion calls then run in parallel. Their critiques and the synthesis
-are free-form strings: prompts request strengths, weaknesses, questions, and
-evidence IDs, but no intermediate schema or grounding validator enforces them.
-The chair receives serialized context and synthesis and must pass only the
-strict final-form parser. With the optional author loop, the author receives
-context plus the validated initial review and returns a free-form rebuttal; the
-chair then receives that rebuttal and emits a second validated form. Neither
-chair call receives a human review or final decision.
+% Offline persistent team-state update.
+\node[stage,text width=19mm,below=20mm of input] (cases)
+  {Public historical\\train/dev/test};
+\node[stage,text width=26mm,right=of cases,fill=orange!12,draw=orange!75!black] (candidate)
+  {\textbf{Candidate team state}\\rubric, calibration,\\role-separated memory};
+\node[stage,text width=21mm,right=of candidate] (gate)
+  {Development gate\\non-regression\\+ three deltas};
+\node[stage,text width=21mm,right=of gate] (decision)
+  {Accept/reject\\update current\\and best state};
+\node[stage,text width=19mm,right=of decision] (plateau)
+  {Repeat until\\plateau\\patience};
+\node[stage,text width=21mm,right=of plateau,fill=blue!10,draw=blue!60!black] (state)
+  {Restore best\\sealed test once\\\texttt{best\_state.json}};
+\foreach \a/\b in {cases/candidate,candidate/gate,gate/decision,decision/plateau,plateau/state}
+  \draw[flow] (\a) -- (\b);
+\draw[refine] (plateau.south) .. controls +(0,-6mm) and +(0,-6mm) ..
+  node[below,font=\tiny]{not converged: propose the next train-only candidate}
+  (candidate.south);
+\draw[deploy] (state.east) |-
+  node[pos=.55,right,font=\tiny,align=left]{load only on\\the next run}
+  (output.east);
 
-The live \texttt{review --state best\_state.json} path uses learned state with
-hard role separation. Lexical cue retrieval first excludes memory from the
-current forum. Raw training reviews and rebuttals remain internal;
-\texttt{memory\_guidance} converts a match into a paper-agnostic checklist.
-Domain, criterion, and synthesis requests receive only reviewer guidance, while
-the author receives only author guidance. Chair requests alone receive rubric
-weights, calibration scale and bias, and state-integrity metadata as advisory
-priors. Tests assert self-forum exclusion, raw-text non-disclosure, role
-separation, and delivery to both chair calls.
+\begin{scope}[on background layer]
+\node[fit=(input)(output)(challenge)(rechair),fill=blue!3,draw=blue!25,
+  rounded corners=2pt,inner xsep=3mm,inner ysep=4mm] {};
+\node[fit=(cases)(state),fill=orange!3,draw=orange!25,
+  rounded corners=2pt,inner xsep=3mm,inner ysep=4mm] {};
+\end{scope}
+\node[anchor=south west,font=\scriptsize\bfseries,text=blue!55!black]
+  at ([yshift=4mm]input.north west)
+  {Paper-time Track 2: input and persistent state stay frozen};
+\node[anchor=south west,font=\scriptsize\bfseries,text=orange!75!black]
+  at ([yshift=4mm]cases.north west)
+  {Offline agent-team state update loop};
+\end{tikzpicture}
+\caption{End-to-end workflow and two separated loops. Paper-time refinement
+stress-tests and may revise a review without changing its immutable bundle or
+persistent state. The offline loop iteratively updates rubric, calibration,
+and role-separated retrieval memory, admits candidates through a development
+gate, restores the best state, and supplies only the next Track 2 run. This is
+an operating-state update: hosted weights, prompts, and team roster remain
+fixed.}
+\label{fig:workflow}
+\end{figure*}
 
-The implementation also prepends an untrusted-document rule: paper and
-extracted text cannot override system instructions or reveal unavailable
-labels. It does not parse PDFs, detect hidden text, perform OCR comparison,
-retrieve semantic evidence, validate free-form critique provenance, or build a
-typed issue graph. Those remain required extensions, not reported capabilities.
+\section{Fast Pipeline and Two Loops}
 
-\section{Public Data and Versioned Update}
+\paragraph{Five-call base path.}
+\texttt{fast-v1} replaces the legacy 19-section extraction and 14-agent fan-out
+with two complementary extraction calls. Each returns typed claims,
+limitations, equations, experiment facts, and internal contradictions with
+stable evidence IDs. Two independent reviewers receive the compact evidence
+registry and specialize in technical validity and empirical/reproducibility
+checks. A chair consolidates their evidence-linked findings into the strict
+review form. In a ten-paper batch, all papers complete the five-call base path
+before refinement selection. At most two papers then receive an author-style
+challenge and a second chair call. This base-first scheduler bounds cost and
+prevents early papers from consuming the refinement budget.
 
-OpenReview connects public submissions, reviews, responses, and decisions by
-forum~\cite{openreviewnotes,openreviewretrieval}. The canonical smoke does not
-claim a fresh API snapshot. \texttt{scripts/build\_real\_seed.py} joins public
-paper Markdown from ReviewBench (CC-BY-4.0) with reviews and rebuttal dialogues
-from ReviewRebuttal (Apache-2.0)~\cite{reviewbenchdataset,reviewrebuttaldataset}.
-It removes author identity fields and keeps cases with a paper, scored review,
-rebuttal, and decision. \texttt{data/real/seed\_manifest.json} records source
-URLs, source hashes, licenses, selected forum IDs, and output hash. The corpus
-SHA-256 begins \texttt{02586f1cfef1}.
+The review-time state contains rubric weights, score calibration, and at most
+eight paper-agnostic memory items. Retrieval excludes the current forum and
+passes generalized checklists rather than stored reviews or rebuttals. Human
+reviews, rebuttals, and decisions are absent from paper-time requests. The
+public 20-case ReviewBench--ReviewRebuttal seed
+~\cite{reviewbenchdataset,reviewrebuttaldataset} is split by forum into 16
+train, two development, and two sealed-test cases. It is used only for a
+deterministic integrity/non-regression smoke test; it does not establish
+reviewer quality.
 
-The seed has 20 papers, 77 reviews, and 31 rebuttal dialogues: five ICLR 2022,
-seven ICLR 2023, and eight NeurIPS 2022, with 15 accept and five reject
-decisions. There is no complete RecSys case, and ReviewBench text may be a
-revised public version. The implemented SHA-256 forum-ID split is deterministic
-and disjoint: 16 train, two development, and two sealed test forums under seed
-\texttt{ralphton-icml-real-seed-v1}. It does not yet group PDF/title
-near-duplicates or authors. Development and test IDs cannot enter either memory;
-the test fingerprint is checked and evaluated once after model selection.
+\paragraph{Iterative agent-team update.}
+Figure~\ref{fig:workflow} makes the persistent update loop explicit. Each
+offline iteration proposes a train-only, immutable \texttt{LearningState}
+candidate that updates rubric weights, calibration scale/bias, and
+role-separated reviewer/author memory. Development non-regression decides
+acceptance; quality, behavior, and state deltas drive plateau stopping; the
+best state is restored before one sealed-test evaluation. The registered seed
+run executed five iterations, selected iteration 1, and stopped after a
+three-step plateau. This is an orchestration-level team update, not gradient
+training, hosted-model fine-tuning, prompt rewriting, or roster adaptation.
+Separately, the paper-time simulated Author--Chair loop can revise only the
+current review over frozen evidence; it cannot teach later papers.
 
-\texttt{LearningState} versions four rubric weights, linear overall-score scale
-and bias, prompt-manifest digest, bounded reviewer/author memories, and parent
-digest. It neither fine-tunes model weights nor rewrites prompts. On train data,
-\texttt{propose\_update} first estimates score calibration. For available final
-decisions it computes acceptance probabilities from calibrated overall scores
-and applies the clipped residual step
-\begin{equation}
- b \leftarrow b + \eta\lambda_{\rm dec}\,
- \operatorname{mean}(y_i-\hat p_i), \qquad \lambda_{\rm dec}=0.25.
-\end{equation}
-The decision is offline train supervision, never a chair input. A candidate is
-accepted only if development field coverage and complete-output coverage do not
-regress beyond tolerance and normalized MAE and Brier do not increase beyond
-tolerance. Thus decision calibration cannot bypass the per-metric gate.
+\paragraph{Backend isolation.}
+The first-class hosted backend invokes Codex CLI 0.144.1 with an explicit
+\texttt{gpt-5.6-sol} model~\cite{openaigpt56sol}. Authentication is the local
+ChatGPT login rather than a repository API key. Each request runs in an
+ephemeral, read-only working directory with interactive and network tools
+disabled. A small environment allowlist excludes variables such as
+\texttt{OPENAI\_API\_KEY}. JSON Schema constrains model output; Python performs
+semantic validation and bounded retry. One global semaphore enforces
+concurrency four across papers, while a monotonic hard deadline terminates the
+whole process group. Atomic completion markers, content-addressed cache keys,
+and JSONL progress records support auditable resume without treating an invalid
+response as complete.
 
-For version $t$, utility $U_t$ averages available field coverage, complete
-coverage, one minus normalized MAE, and one minus Brier score~\cite{brier1950}.
-Behavioral delta $D_t$ measures normalized score/probability change and Comment
-token-set distance. State delta $R_t$ averages rubric, scale, bias, prompt
-digest, and memory change. A plateau satisfies
-\begin{equation}
- |U_t-U_{t-1}|\leq\epsilon_U,\quad D_t\leq\epsilon_D,\quad
- R_t\leq\epsilon_R.
-\end{equation}
-After the minimum iteration, $p$ consecutive plateaus stop training; every
-accepted state competes with the best non-regressing state, which is restored
-before the single sealed-test call.
+\section{Evaluation Protocol}
 
-\section{Canonical Smoke Result}
+\paragraph{Frozen benchmark.}
+The runtime audit uses the first ten entries of a public paper-only manifest.
+No human reviews, rebuttals, decisions, or private evidence are included. The
+set overlaps the historical split as eight train and two development forums,
+with no sealed-test forum, so it is a systems audit rather than a quality test.
+The
+manifest SHA-256 begins \texttt{fdfdd199e694}; the selected learned state digest
+begins \texttt{fe1a1597e2e7}. The registered configuration is four paper
+workers, global Codex concurrency four, two attempts per logical call, a
+1,440-second soft deadline, a 1,800-second hard deadline, conditional author
+loop, and at most two refinements. The measured run is cold: cache hits are
+zero.
 
-Run \texttt{77771e943444d32dc716} identifies eight substantive artifacts in
-\path{artifacts/real_seed_v1}. For fixed inputs and configuration their hashes
-and run ID are deterministic; \texttt{run\_manifest.json.created\_at} is
-execution provenance and changes on rerun. The full-file
-\path{dev_review_preview.md} is wrapper-free Markdown that round-trips through
-the strict seven-field parser. Prompt-manifest and restored-state SHA-256 values
-are, respectively,
-\texttt{c0562f49\allowbreak{}640cbe6b\allowbreak{}33e59a6b\allowbreak{}cb2e673a\allowbreak{}2bd7f04c\allowbreak{}b6915a95\allowbreak{}f9805a7c\allowbreak{}f18bcbc2}
-and
-\texttt{de6d0295\allowbreak{}dbd26723\allowbreak{}e1e6e579\allowbreak{}824362ec\allowbreak{}9dab56f1\allowbreak{}a43eb827\allowbreak{}7c8ffcea\allowbreak{}857330e7}.
+We validate (i) all JSON and rendered review schemas, (ii) every cited evidence
+ID against its paper registry, (iii) representative maximum request size
+relative to extracted paper text, (iv) deadline and call budget, and (v)
+historical non-regression within tolerance 0.02. The quality-adjacent audit
+counts linked findings and contradictions, but does not label them correct.
 
-The registered configuration used minimum/maximum iterations 3/40, patience 3,
-$(\epsilon_U,\epsilon_D,\epsilon_R)=(0.001,0.002,0.002)$, non-regression
-tolerance 0.02, learning rate 0.1, decision-calibration weight 0.25, and memory
-limit 64. It converged after five iterations and restored version 1 from best
-iteration 1, with 64 reviewer and 53 author memory items from train forums.
-Four later candidates were rejected; the final three zero-change iterations
-satisfied patience.
+\paragraph{Counterfactual baseline.}
+For a like-for-like communication estimate, the validator replays the same
+papers, state, \texttt{fast-v1} evidence, critiques, and final Markdown through
+the legacy request serializers without making model calls. This isolates
+request-shape overhead, but it is not a legacy end-to-end latency or quality
+measurement. The pre-registered acceptance target is at least 85\% fewer
+request bytes than this serialization.
+
+\section{Results}
 
 \begin{table}[t]
-\caption{Canonical deterministic smoke. Coverage and complete-output coverage
-are 1.0000 throughout; development and test each contain two forums.}
-\label{tab:smoke}
+\caption{Cold hosted audit on ten public papers.}
+\label{tab:main}
 \centering
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}lrrr@{}}
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}lr@{}}
 \toprule
-Stage & MAE & Brier & Utility \\
+Metric & Result \\
 \midrule
-Baseline dev & 0.7083 & 0.2863 & 0.8762 \\
-Best-state dev & 0.7083 & 0.2796 & 0.8778 \\
-Sealed test & 0.3750 & 0.1229 & 0.9426 \\
+Schema/evidence-valid reviews & 10/10 \\
+Wall time / throughput & 631.9 s / 0.949 papers/min \\
+Logical/actual calls & 54 / 54 \\
+Retries / failures / timeouts & 0 / 0 / 0 \\
+Request / output bytes & 2,932,889 / 378,772 \\
+Linked findings / major--fatal & 220 / 97 \\
+Max request-to-paper ratio & 1.103 \\
+Deadline and call budget & Pass \\
+Legacy request estimate & 17,503,551 bytes, 309 calls \\
+Request-byte reduction & 83.24\% (85\% target: Fail) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Development utility rose by 0.001656 solely because Brier improved; MAE was
-unchanged. The sealed test has no pre-update counterpart by design. With two
-development and two test forums, neither difference supports confidence
-intervals, domain comparison, or generalization. No LLM review, extraction
-quality study, human annotation, agent ablation, cost study, or robustness
-benchmark was run; those results remain \NA{}.
+Table~\ref{tab:main} reports the run identified by the immutable input
+manifest, pipeline digest, state digest, model, and CLI version. Fifty calls
+served the base paths and four served the two selected refinements. All 220
+finding/contradiction links resolved to registered evidence, including 97
+items marked major or fatal by the generated records. This is a traceability
+count, not 97 independently verified defects.
+Byte counts are UTF-8 serialized backend payload and output sizes, not token
+usage, network transfer, or billing measurements.
 
-\section{Policy, Limitations, and Reproducibility}
-\label{sec:limits}
+\begin{table}[t]
+\caption{Concurrent per-call hosted latency in seconds. Refinement stages have
+two calls; durations are not additive wall time.}
+\label{tab:latency}
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Stage & p50 & p95 \\
+\midrule
+Evidence extraction & 51.93 & 60.36 \\
+Consolidated review & 38.00 & 42.10 \\
+Chair/final review & 30.72 & 38.60 \\
+Author challenge & 43.15 & 46.67 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-The system must not ingest confidential submissions or private reviewer
-discussion, and its output must not be submitted as an official ICML review.
-ICML's LLM and peer-review ethics policies require venue authorization,
-confidentiality, integrity, and human accountability
-~\cite{icml2026llm,icml2026ethics}. The current no-auth API client and public
-seed reduce access risk but do not establish blanket reuse rights. Historical
-decisions encode capacity, fashion, disagreement, and social bias; they are
-weak calibration supervision, not research truth.
+The representative request ratio of 1.103 is below the registered ceiling of
+3, and the run finished in 35.1\% of the hard deadline. The counterfactual
+legacy serializer would issue 309 calls and 17.50 MB of requests. The observed
+83.24\% byte reduction is large but 1.76 percentage points below the 85\%
+criterion; the overall acceptance audit therefore fails. Reducing shared
+schema and context repetition is the remaining measurable optimization.
 
-The current evidence core lacks source spans and issue resolution; specialist,
-synthesis, and rebuttal outputs are unvalidated strings; no PDF security or
-near-duplicate document pipeline exists; routing is lexical; RecSys is absent;
-and hosted models may have pretraining contamination or version drift. Human
-comment evaluation is costly and subjective. Any quality claim therefore needs
-a larger lawful corpus, document-level deduplication, registered LLM baselines
-and ablations, blinded domain experts, agreement statistics, robustness tests,
-cost reporting, and manifest-linked metric inputs. Formatting follows the
-official ICML 2026 author style~\cite{icml2026author}; it does not imply
-submission, acceptance, or endorsement.
+\paragraph{Historical smoke.}
+State build run \texttt{3842327ddf72639976d7} preserved development MAE at
+0.7083 while Brier changed from 0.2863 to 0.2796. The one-time, two-forum sealed
+test reported MAE 0.3750 and Brier 0.1229. With only two development and two
+test forums and deterministic proxy reviews, these numbers verify state
+selection, role separation, and non-regression plumbing only.
+
+\section{Public-Paper Case Study}
+
+We separately ran the same Track 2 workflow on public paper
+\texttt{2602.00521v2}; its PDF SHA-256 begins \texttt{6c29c6497761} and bundle
+digest begins \texttt{bfacf0180851}. Seven hosted calls completed in 220.2
+seconds with no retry, failure, timeout, or cache hit, using 565,696 request
+bytes and 49,823 output bytes. The final scores were Soundness 1, Presentation
+2, Significance 3, Originality 3, Overall Recommendation 2, and Confidence 4.
+Refinement retained these scores and continued to mark the review as needing
+refinement.
+
+The final review identified a central latent-scale comparability problem in
+independently fitted human and LLM graded-response models; an equation
+denominator and undefined boundary cases; inconsistent threshold counts;
+gate inequalities and Phase-2 application mismatches; a prompt/JSON score-scale
+mismatch; and missing bootstrap unit and multiplicity specifications. These
+findings demonstrate that the evidence registry can support concrete,
+cross-section criticism. They were not adjudicated by the authors or blinded
+human reviewers, and some detailed table cross-checks were still missed.
+Accordingly, the case study is inspectable process evidence, not a precision,
+recall, or superiority result.
+
+\section{Limitations and Reproducibility}
+
+The benchmark is small, public-only, and contains revised paper text; RecSys is
+not represented in the historical seed. Hosted model behavior and service
+latency can drift. The byte baseline reuses \texttt{fast-v1} intermediate
+outputs and therefore estimates legacy serialization rather than executing the
+legacy model pipeline. Evidence-ID validity establishes referential integrity,
+not factual correctness. No human annotation, inter-rater agreement, blinded
+comparison, review usefulness score, robustness suite, model ablation, or cost
+measurement was performed. Confidential-review suitability is explicitly out
+of scope. The case-study manifest omits its source URI, so its public
+provenance is not independently attested by that artifact and should be added
+before external release.
+
+All reported values are generated artifacts rather than transcribed logs. The
+benchmark manifest, per-paper Track 2 bundles, progress records, reviews, run
+summary, acceptance audit, and human inspection sheet are under
+\path{artifacts/benchmark_fast_v1/gpt-5.6-sol-cold}. The case-study review is
+under \path{artifacts/track2/2602.00521v2-loop2}. The report builds with
+\texttt{make -C report check}. Formatting follows the ICML 2026 author style
+~\cite{icml2026author}; it does not imply submission or endorsement.
 
 \paragraph{Conclusion.}
-The repository now provides a testable separation of paper-time evidence,
-role-specific guidance, offline supervision, calibrated update, convergence,
-and sealed evaluation. The canonical artifact establishes that these plumbing
-and integrity contracts execute; reviewer competence remains unmeasured.
+\texttt{fast-v1} establishes a reproducible Track 2 path from immutable public
+input to evidence-linked structured review, while the dev-gated offline loop
+provides a versioned mechanism for repeatedly updating the agent team's
+operating state. The ten-paper run met schema, traceability, deadline,
+reliability, context-size, and historical non-regression checks. It did not
+meet the 85\% request-byte reduction target, and neither loop yet supports a
+claim of improved reviewer quality.
 
 \clearpage
 \bibliographystyle{icml2026}

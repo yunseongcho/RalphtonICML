@@ -1,8 +1,9 @@
 # Ralphton ICML Reviewer Team
 
-이 저장소는 논문 evidence extraction, 분야/평가별 reviewer subagent,
-author rebuttal, chair aggregation, public review-history 기반 update와 convergence
-gate를 하나의 재현 가능한 pipeline으로 구성합니다. 최종 Markdown은
+이 저장소의 review pipeline 전체가 Track 2입니다. 최종 Track 1 논문과 기존
+evidence를 SHA-256으로 고정한 뒤, read-only reviewer가 extraction, consolidated
+review, chair aggregation을 수행합니다. 논문을 수정하거나 새 실험을 만들지 않으며,
+검증할 수 없는 주장은 `evidence-insufficient`로 표시합니다. 최종 Markdown은
 `reviewer_instruction.md`의 7개 field와 score range를 strict하게 따릅니다.
 
 ## Team
@@ -51,54 +52,78 @@ final decision을 join한 `data/real/seed_cases.jsonl`을 forum 단위로 16/2/2
 split합니다. Train에서만 rubric/calibration 및 reviewer/author retrieval memory를
 update하고, frozen dev set의 quality/behavior/state delta가 epsilon 이하인 상태가
 patience만큼 반복되면 중단합니다. Best state restore 후 test는 한 번 평가합니다.
-결과는 `artifacts/real_seed_v1/`에 hash와 함께 저장됩니다.
+결과는 `artifacts/real_seed_v2/`에 hash와 함께 저장됩니다.
 
-## Model Backend
+## Track 2 Review
 
-실제 agent 실행은 provider-independent JSON-over-stdin command를 사용합니다.
-Command는 한 JSON request를 stdin으로 받고 response text 또는
-`{"text": "..."}`를 stdout으로 반환해야 합니다.
+입력은 다음 구조로 준비합니다. `review`가 raw file hash, PDF text extractor version,
+extracted-text hash와 출력 계약을 `review-agent.md`에 기록하고 실행 전후 다시
+검증합니다.
 
-```bash
-python3 -m ralphton_icml review paper.json \
-  --backend-command "python3 my_model_adapter.py" \
-  --state artifacts/real_seed_v1/best_state.json \
-  --root . \
-  --output artifacts/review.json
+```text
+track2/
+├── inputs/paper.pdf
+├── evidence/results.json       # optional, 기존 evidence만 허용
+└── outputs/
 ```
 
-`--state`가 없으면 initial reviewer는 현재 paper evidence만, author는
-paper evidence+initial review만, post-rebuttal reviewer는 여기에 rebuttal을 더해
-받습니다. `--state`를 사용하면 reviewer stage에는 train-only reviewer retrieval
-memory와 calibration이, author stage에는 별도의 train-only author memory가 추가됩니다.
-현재 paper의 human review와 final decision은 어느 live agent에도 전달되지 않고
-offline train updater만 볼 수 있습니다.
-
-State 파일은 자체 integrity digest가 있어야 하며, `--root`에서 계산한 현재
-prompt/schema/team manifest와 정확히 일치해야 합니다. 불일치하면 review 실행 전에
-중단되므로, source나 prompt를 변경한 뒤에는 `run-seed`로 state를 다시 생성해야 합니다.
-
-### Hosted Codex Adapter
-
-`scripts/codex_backend_adapter.py`는 `codex exec`를 ephemeral read-only worker로
-호출합니다. `codex login status`가 ChatGPT login을 표시하면 별도 API key는 필요하지
-않습니다. 공개 논문에만 사용하고 confidential submission은 전송하지 마십시오.
+Hosted 실행은 first-class `CodexExecBackend`를 사용합니다. 기본 base path는
+extraction 2회, reviewer 2회, chair 1회의 총 5회이며, conditional internal author
+stress-test가 필요한 경우에만 2회가 추가됩니다.
 
 ```bash
-CODEX_BACKEND_LOG=artifacts/review/progress.jsonl \
-CODEX_BACKEND_CACHE=artifacts/review/backend_cache \
-CODEX_BACKEND_ATTEMPTS=2 CODEX_BACKEND_TIMEOUT=900 \
-python3 -B -m ralphton_icml review paper.json \
-  --backend-command "python3 scripts/codex_backend_adapter.py" \
-  --state artifacts/real_seed_v1/best_state.json \
-  --root . --output artifacts/review/review_run.json \
-  --timeout 1800 --max-workers 2
+python3 -B -m ralphton_icml review track2/inputs/paper.pdf \
+  --backend codex --model gpt-5.6-sol \
+  --track2-root track2 \
+  --evidence track2/evidence/results.json \
+  --state artifacts/real_seed_v2/best_state.json --root . \
+  --cache-dir track2/backend_cache --progress track2/progress.jsonl \
+  --output track2/outputs/review-run.json
 ```
 
-Cache key는 전체 request JSON, selected model, adapter format version의 SHA-256이며
-response만 local JSON으로 저장합니다. Final chair 응답은 정확한 field label/order,
-bare integer score/range, non-empty Comment를 검증한 뒤 canonical Markdown heading과
-blank-line layout으로 정규화됩니다.
+필수 human-readable 산출물은 `track2/review-agent.md`와
+`track2/outputs/review-result.md`입니다. JSON 결과에는 19개 evidence registry,
+reviewer finding ID, chair-selected evidence ID, call/latency metadata가 함께 남습니다.
+
+State는 integrity digest와 현재 prompt/schema/team manifest가 정확히 일치해야 합니다.
+Source나 prompt를 변경한 뒤에는 `run-seed`로 state를 다시 생성해야 합니다. Live
+request에는 현재 paper와 명시적 evidence, train-only generalized memory만 들어가며,
+현재 paper의 human review, rebuttal, metareview, rating, decision은 전달되지 않습니다.
+
+### Batch
+
+Batch manifest는 공격 표면을 줄이기 위해 `papers` 외의 key를 허용하지 않습니다.
+상대 경로는 manifest 기준으로 해석합니다.
+
+```json
+{"papers":["papers/paper-01.json","papers/paper-02.json"]}
+```
+
+```bash
+python3 -B -m ralphton_icml review-batch papers.manifest.json \
+  --backend codex --model gpt-5.6-sol \
+  --state artifacts/real_seed_v2/best_state.json --root . \
+  --output-dir artifacts/batch_review \
+  --paper-workers 4 --codex-concurrency 4 \
+  --author-loop conditional --max-refinements 2 \
+  --deadline-seconds 1800 --soft-deadline-seconds 1440 --resume
+```
+
+모든 base review를 먼저 완료한 뒤 global priority로 최대 2편만 refinement합니다.
+결과는 논문별 Track 2 root, atomic JSON/Markdown/completion marker,
+`progress.jsonl`, `backend-progress.jsonl`, `summary.json`으로 저장됩니다.
+
+### Hosted Authentication And Isolation
+
+`codex login status`가 `Logged in using ChatGPT`이면 별도 API key가 필요하지 않습니다.
+Worker는 `--ephemeral`, isolated temporary directory, read-only sandbox, strict output
+schema를 사용합니다. Shell, browser, apps, plugins, computer-use, multi-agent 기능을
+CLI level에서 끄고 child environment는 `PATH`, `HOME`, `CODEX_HOME` 등 최소 항목만
+허용하므로 provider API key를 상속하지 않습니다. 공개 논문만 전송해야 하며,
+confidential submission에는 사용하면 안 됩니다.
+
+기존 JSON-over-stdin `SubprocessBackend`와 `scripts/codex_backend_adapter.py`는
+`legacy-v1` regression/compatibility 용도로만 유지합니다.
 
 ## Scope And Policy
 

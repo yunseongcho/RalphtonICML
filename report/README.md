@@ -25,6 +25,7 @@ make -C report tectonic
 make -C report latexmk
 ```
 
-The report deliberately marks every unexecuted experiment as
-`N/A (not run)`; those entries must only be replaced by generated artifacts
-from a versioned evaluation run.
+The report is generated from the frozen `fast-v1` Track 2 artifacts. Its body
+must remain at most four pages; references begin after an explicit `\\clearpage`
+and are excluded from that limit. Reported measurements must only be changed
+from a versioned evaluation artifact.

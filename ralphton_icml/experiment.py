@@ -32,10 +32,14 @@ PROMPT_MANIFEST_FILES = (
     "ralphton_icml/context.py",
     "ralphton_icml/team.py",
     "ralphton_icml/orchestrator.py",
+    "ralphton_icml/fast_schema.py",
+    "ralphton_icml/fast.py",
+    "ralphton_icml/track2.py",
     "ralphton_icml/learning.py",
     "ralphton_icml/seed.py",
     "ralphton_icml/experiment.py",
     "configs/learning.json",
+    "skills/auto-research/assets/track-2-agent-template.md",
 )
 
 

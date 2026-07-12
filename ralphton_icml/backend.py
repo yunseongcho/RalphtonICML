@@ -25,15 +25,19 @@ class ModelRequest:
     stage: str
     system: str
     payload: Mapping[str, Any]
+    output_schema: Optional[Mapping[str, Any]] = None
 
     def as_dict(self) -> Dict[str, Any]:
-        return {
+        value = {
             "request_id": self.request_id,
             "agent_id": self.agent_id,
             "stage": self.stage,
             "system": self.system,
             "payload": dict(self.payload),
         }
+        if self.output_schema is not None:
+            value["output_schema"] = dict(self.output_schema)
+        return value
 
 
 class ModelBackend(Protocol):

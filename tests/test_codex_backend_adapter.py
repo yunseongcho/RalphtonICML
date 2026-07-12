@@ -77,6 +77,33 @@ The central metric needs sample-level validation.
         with self.assertRaisesRegex(ValueError, "bare ASCII integer"):
             adapter._canonicalize_final_review(invalid)
 
+    def test_structured_final_review_bypasses_legacy_markdown_parser(self):
+        request = {
+            "request_id": "structured",
+            "agent_id": "review.chair",
+            "stage": "final_review",
+            "system": "rules",
+            "payload": {"paper": "public"},
+            "output_schema": {
+                "type": "object",
+                "properties": {"soundness": {"type": "integer"}},
+                "required": ["soundness"],
+                "additionalProperties": False,
+            },
+        }
+        self.assertEqual(
+            adapter._normalize_response(request, '{"soundness":2}'),
+            '{"soundness":2}',
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            command = adapter._command(
+                Path(directory) / "last.json",
+                Path(directory),
+                Path(directory) / "schema.json",
+            )
+        self.assertIn("--output-schema", command)
+        self.assertIn("--json", command)
+
     def test_cache_key_covers_full_request(self):
         left = {
             "request_id": "same",

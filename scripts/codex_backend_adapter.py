@@ -15,7 +15,7 @@ import time
 from typing import Any, Mapping
 
 
-_CACHE_FORMAT_VERSION = 1
+_CACHE_FORMAT_VERSION = 2
 _REVIEW_FIELDS = (
     ("soundness", "#### **Soundness**", 1, 4),
     ("presentation", "#### **Presentation**", 1, 4),
@@ -52,6 +52,8 @@ def _load_request() -> Mapping[str, Any]:
         raise ValueError("request system must be non-empty text")
     if not isinstance(value["payload"], Mapping):
         raise ValueError("request payload must be an object")
+    if "output_schema" in value and not isinstance(value["output_schema"], Mapping):
+        raise ValueError("request output_schema must be an object when supplied")
     return value
 
 
@@ -85,7 +87,9 @@ def _prompt(request: Mapping[str, Any]) -> str:
     )
 
 
-def _command(output_path: Path, workdir: Path) -> list[str]:
+def _command(
+    output_path: Path, workdir: Path, schema_path: Path | None = None
+) -> list[str]:
     command = [
         os.environ.get("CODEX_EXECUTABLE", "codex"),
         "exec",
@@ -97,11 +101,17 @@ def _command(output_path: Path, workdir: Path) -> list[str]:
         "--ignore-rules",
         "--color",
         "never",
-        "--output-last-message",
-        str(output_path),
-        "--cd",
-        str(workdir),
     ]
+    if schema_path is not None:
+        command.extend(("--output-schema", str(schema_path), "--json"))
+    command.extend(
+        (
+            "--output-last-message",
+            str(output_path),
+            "--cd",
+            str(workdir),
+        )
+    )
     model = os.environ.get("CODEX_REVIEW_MODEL", "").strip()
     if model:
         command.extend(("--model", model))
@@ -170,6 +180,20 @@ def _canonicalize_final_review(response: str) -> str:
 
 
 def _normalize_response(request: Mapping[str, Any], response: str) -> str:
+    if "output_schema" in request:
+        try:
+            value = json.loads(response)
+        except json.JSONDecodeError as exc:
+            raise ValueError("structured response must be valid JSON: {}".format(exc)) from exc
+        if not isinstance(value, Mapping):
+            raise ValueError("structured response must be a JSON object")
+        return json.dumps(
+            value,
+            ensure_ascii=False,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
     if request["stage"] == "final_review":
         return _canonicalize_final_review(response)
     return response.strip()
@@ -312,9 +336,22 @@ def _complete(request: Mapping[str, Any]) -> str:
             workdir = Path(directory)
             (workdir / "AGENTS.md").write_text(_agent_guidance(request), encoding="utf-8")
             output_path = workdir / "last-message.txt"
+            schema_path = None
+            if "output_schema" in request:
+                schema_path = workdir / "output-schema.json"
+                schema_path.write_text(
+                    json.dumps(
+                        request["output_schema"],
+                        ensure_ascii=False,
+                        allow_nan=False,
+                        sort_keys=True,
+                    )
+                    + "\n",
+                    encoding="utf-8",
+                )
             try:
                 completed = subprocess.run(
-                    _command(output_path, workdir),
+                    _command(output_path, workdir, schema_path),
                     input=prompt,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,

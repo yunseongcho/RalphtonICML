@@ -237,13 +237,13 @@ class CliStateCompatibilityTest(unittest.TestCase):
 
     def test_current_artifact_state_matches_source_manifest(self):
         state = _load_compatible_learning_state(
-            str(self.ROOT / "artifacts" / "real_seed_v1" / "best_state.json"),
+            str(self.ROOT / "artifacts" / "real_seed_v2" / "best_state.json"),
             self.ROOT,
         )
         self.assertEqual(state.version, 1)
 
         preview = (
-            self.ROOT / "artifacts" / "real_seed_v1" / "dev_review_preview.md"
+            self.ROOT / "artifacts" / "real_seed_v2" / "dev_review_preview.md"
         ).read_text(encoding="utf-8")
         self.assertEqual(ReviewOutput.from_markdown(preview).to_markdown(), preview)
 
