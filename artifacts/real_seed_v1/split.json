@@ -1,0 +1,36 @@
+{
+  "dev": [
+    "VWqiPBB_EM",
+    "8onXkaNWLHA"
+  ],
+  "grouping": "OpenReview forum_id",
+  "ratios": {
+    "dev": 0.1,
+    "test": 0.1,
+    "train": 0.8
+  },
+  "schema_version": 1,
+  "seed": "ralphton-icml-real-seed-v1",
+  "test": [
+    "pGcTocvaZkJ",
+    "p9zeOtKQXKs"
+  ],
+  "train": [
+    "VpYBxaPLaj-",
+    "tUMr0Iox8XW",
+    "hLbeJ6jObDD",
+    "0eTTKOOOQkV",
+    "Uzgfy7_v7BH",
+    "HQDvPsdXS-F",
+    "morSrUyWG26",
+    "C8Ltz08PtBp",
+    "AP1MKT37rJ",
+    "uCBx_6Hc7cu",
+    "hcVlMF3Nvxg",
+    "ujibH3ervr",
+    "19MmorTQhho",
+    "3pugbNqOh5m",
+    "utahaTbcHdP",
+    "ZJqqSa8FsH9"
+  ]
+}

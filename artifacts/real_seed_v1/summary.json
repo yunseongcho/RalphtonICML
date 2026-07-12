@@ -1,0 +1,180 @@
+{
+  "author_memory_items": 53,
+  "baseline_dev": {
+    "brier": 0.2862638033387439,
+    "complete_coverage": 1.0,
+    "field_coverage": 1.0,
+    "mae": 0.7083333333333333,
+    "n_examples": 2,
+    "normalized_mae": 0.20902777777777776,
+    "per_field_mae": [
+      [
+        "confidence",
+        0.625
+      ],
+      [
+        "originality",
+        0.8333333333333333
+      ],
+      [
+        "overall_recommendation",
+        0.625
+      ],
+      [
+        "significance",
+        0.8333333333333333
+      ],
+      [
+        "soundness",
+        0.625
+      ]
+    ],
+    "utility": 0.8761771047208695
+  },
+  "baseline_state_digest": "eb3db0db16089c9c6bab43ebbd182bcd9b92656be0c69b87fe1b856102c45535",
+  "best_dev": {
+    "brier": 0.2796413941481681,
+    "complete_coverage": 1.0,
+    "field_coverage": 1.0,
+    "mae": 0.7083333333333333,
+    "n_examples": 2,
+    "normalized_mae": 0.20902777777777776,
+    "per_field_mae": [
+      [
+        "confidence",
+        0.625
+      ],
+      [
+        "originality",
+        0.8333333333333333
+      ],
+      [
+        "overall_recommendation",
+        0.625
+      ],
+      [
+        "significance",
+        0.8333333333333333
+      ],
+      [
+        "soundness",
+        0.625
+      ]
+    ],
+    "utility": 0.8778327070185135
+  },
+  "best_iteration": 1,
+  "best_state_digest": "de6d0295dbd26723e1e6e579824362ec9dab56f1a43eb8277c8ffcea857330e7",
+  "best_state_version": 1,
+  "claim_scope": "deterministic pipeline/update smoke; not reviewer-quality evidence",
+  "converged": true,
+  "dev_utility_change": 0.0016556022976439433,
+  "final_test": {
+    "brier": 0.12289123903753602,
+    "complete_coverage": 1.0,
+    "field_coverage": 1.0,
+    "mae": 0.375,
+    "n_examples": 2,
+    "normalized_mae": 0.10666666666666666,
+    "per_field_mae": [
+      [
+        "confidence",
+        0.5
+      ],
+      [
+        "overall_recommendation",
+        0.375
+      ],
+      [
+        "presentation",
+        0.25
+      ],
+      [
+        "significance",
+        0.5
+      ],
+      [
+        "soundness",
+        0.25
+      ]
+    ],
+    "utility": 0.9426105235739494
+  },
+  "iterations": 5,
+  "known_limitations": [
+    "The ReviewBench paper text may be a revised public version rather than the initial submission.",
+    "This small seed is for pipeline/update smoke evaluation, not a publishable benchmark result.",
+    "RecSys has no complete example in this selected 20-case intersection.",
+    "OpenReview venue rubrics are normalized only where the upstream Re2 record provides mappings."
+  ],
+  "last_iteration": {
+    "accepted": false,
+    "behavioral_delta": 0.0,
+    "candidate_version": 2,
+    "evaluation": {
+      "brier": 0.2796413941481681,
+      "complete_coverage": 1.0,
+      "field_coverage": 1.0,
+      "mae": 0.7083333333333333,
+      "n_examples": 2,
+      "normalized_mae": 0.20902777777777776,
+      "per_field_mae": [
+        [
+          "confidence",
+          0.625
+        ],
+        [
+          "originality",
+          0.8333333333333333
+        ],
+        [
+          "overall_recommendation",
+          0.625
+        ],
+        [
+          "significance",
+          0.8333333333333333
+        ],
+        [
+          "soundness",
+          0.625
+        ]
+      ],
+      "utility": 0.8778327070185135
+    },
+    "iteration": 5,
+    "plateau_count": 3,
+    "quality_improvement": 0.0,
+    "state_delta": 0.0,
+    "utility": 0.8778327070185135
+  },
+  "memory_forum_ids": [
+    "0eTTKOOOQkV",
+    "19MmorTQhho",
+    "3pugbNqOh5m",
+    "AP1MKT37rJ",
+    "C8Ltz08PtBp",
+    "HQDvPsdXS-F",
+    "Uzgfy7_v7BH",
+    "VpYBxaPLaj-",
+    "ZJqqSa8FsH9",
+    "hLbeJ6jObDD",
+    "hcVlMF3Nvxg",
+    "morSrUyWG26",
+    "tUMr0Iox8XW",
+    "uCBx_6Hc7cu",
+    "ujibH3ervr",
+    "utahaTbcHdP"
+  ],
+  "record_count": 20,
+  "reviewer_memory_items": 64,
+  "schema_version": 1,
+  "split_counts": {
+    "dev": 2,
+    "test": 2,
+    "train": 16
+  },
+  "stop_reason": "converged",
+  "test_evaluation_count": 1,
+  "test_fingerprint": "21a9f00991ccd7a41d0a6474f7db9bd7bae58b96b3110eec12f58bdf4cf3d5e7"
+}

@@ -1,0 +1,20 @@
+{
+  "digest": "c0562f49640cbe6b33e59a6bcb2e673a2bd7f04cb6915a95f9805a7cf18bcbc2",
+  "files": {
+    "configs/learning.json": "32f80e508f39a0e514518573c743f76df6b90db6ef7a2e4cd3299a116b289ebc",
+    "prompts.py": "ea375f3f77c12692001c2a0a65f8b46f7032b3c22eed04cadb19655296471d5d",
+    "ralphton_icml/context.py": "8d2ab2f5a4f81510ef67bdc454f8673e75bbc4b9cfae1699a8289628e8a77283",
+    "ralphton_icml/experiment.py": "24a58933ca5e780bc4b5c5725c845f4abfc45fbdf08b51d7d65627b2e25fe41d",
+    "ralphton_icml/learning.py": "ed6b433513fa8f2f0dcc75bcfff8d3ad61f3b3b57f153843ef5ba9e390c5d3c3",
+    "ralphton_icml/orchestrator.py": "8774156d2b85732bf05e0ae2295bbd0e556ac3c8973833e2034422d9a9e83a8a",
+    "ralphton_icml/schema.py": "6dce587181e3cbb1b1de444b3ddeeff64c78cc841abebe154ea14fa808190fee",
+    "ralphton_icml/seed.py": "ae47135c5a2dff2a908b186fa205435d39219c180d398756848b3426a4938062",
+    "ralphton_icml/team.py": "ab353fc811f882f0afe51d6bbfb0dcedfd4caff232b99355559d8477a7f1499f",
+    "review_prompts.py": "a49069b5e6c791a401d8606ae564ff9da5f03421a9fdf6b61f4c6b23d44697ae",
+    "reviewer_instruction.md": "de8b4983310bb71bb67d4886a0086464593528ef06c76196f4461e650390e225"
+  },
+  "model_backend": "none (deterministic learning smoke)",
+  "paper_signal_adapter": "paper-only-structural-heuristics-v1",
+  "review_output_contract": "reviewer_instruction.md seven-field subset",
+  "schema_version": 1
+}

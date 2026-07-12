@@ -1,0 +1,88 @@
+{
+  "api": "openreview-api2",
+  "forum_id": "forum-001",
+  "notes": [
+    {
+      "id": "forum-001",
+      "forum": "forum-001",
+      "invitation": "ICML.cc/2026/Conference/-/Blind_Submission",
+      "signatures": ["ICML.cc/2026/Conference/Submission1/Authors"],
+      "content": {
+        "title": {"value": "A Calibrated Multi-Agent Reviewer"},
+        "abstract": {"value": "We study evidence-grounded paper review with specialist agents."},
+        "authors": {"value": ["Anonymous Author 1", "Anonymous Author 2"]},
+        "keywords": {"value": ["peer review", "multi-agent learning"]},
+        "pdf": {"value": "/pdf/forum-001.pdf"},
+        "supplementary_material": {"value": "/attachment/forum-001.zip"}
+      }
+    },
+    {
+      "id": "review-001-a",
+      "forum": "forum-001",
+      "replyto": "forum-001",
+      "invitations": ["ICML.cc/2026/Conference/Submission1/-/Official_Review"],
+      "signatures": ["ICML.cc/2026/Conference/Submission1/Reviewer_ABC"],
+      "content": {
+        "summary": {"value": "The paper proposes a reviewer-agent training loop."},
+        "strengths": {"value": "The evaluation contract is explicit and reproducible."},
+        "weaknesses": {"value": "The domain coverage experiment is small."},
+        "questions": {"value": "How sensitive is convergence to the patience value?"},
+        "soundness": {"value": "3: good"},
+        "presentation": {"value": "4: excellent"},
+        "significance": {"value": "3: good"},
+        "originality": {"value": "3: good"},
+        "overall_recommendation": {"value": "5: Accept"},
+        "confidence": {"value": "4: confident"}
+      }
+    },
+    {
+      "id": "review-001-b",
+      "forum": "forum-001",
+      "replyto": "forum-001",
+      "invitation": "ICML.cc/2026/Conference/Submission1/-/Official_Review",
+      "signatures": ["ICML.cc/2026/Conference/Submission1/Reviewer_XYZ"],
+      "content": {
+        "summary_of_the_paper": "A prompt and retrieval-memory optimization method.",
+        "strengths": "The ablations separate rubric and calibration updates.",
+        "weaknesses": "Human evaluation is limited.",
+        "questions_for_authors": "Can the method handle missing rebuttals?",
+        "technical_quality": "3",
+        "clarity": "3",
+        "impact": "2: fair",
+        "novelty": "3",
+        "rating": "4: Weak Accept",
+        "reviewer_confidence": "3"
+      }
+    },
+    {
+      "id": "rebuttal-001",
+      "forum": "forum-001",
+      "replyto": "forum-001",
+      "invitation": "ICML.cc/2026/Conference/Submission1/-/Author_Response",
+      "signatures": ["ICML.cc/2026/Conference/Submission1/Authors"],
+      "content": {
+        "response": {"value": "We added a patience sensitivity study and missing-data ablation."}
+      }
+    },
+    {
+      "id": "decision-001",
+      "forum": "forum-001",
+      "replyto": "forum-001",
+      "mdate": 1780000000000,
+      "invitation": "ICML.cc/2026/Conference/Submission1/-/Decision",
+      "signatures": ["ICML.cc/2026/Conference/Program_Chairs"],
+      "content": {
+        "decision": {"value": "Accept (Poster)"},
+        "comment": {"value": "The rebuttal resolved the main concern."}
+      }
+    },
+    {
+      "id": "public-comment-001",
+      "forum": "forum-001",
+      "replyto": "forum-001",
+      "invitation": "ICML.cc/2026/Conference/Submission1/-/Public_Comment",
+      "signatures": ["~Public_Reader1"],
+      "content": {"comment": {"value": "Public discussion note."}}
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "artifacts": {
+    "HUMAN_REVIEW.md": "fa6c0bfd32980c987319cab0138d2bd2556795edc7031a91f82f23c57b57bb7b",
+    "best_state.json": "542f064828cf59c0ddc44f84784159563899238c9c08277c5672c4d8c47ef1d9",
+    "config.json": "01a373f962dccb675876f69c2a9fc7a56205d8b88a67073cbb1c71f547e689b0",
+    "dev_review_preview.md": "5017a92981456f8d1b0e61e45bc615e893b255af187e9e1e86baa281d620c758",
+    "history.json": "75a4f815fa5c840534c7cdee5e310241a842ea40315480e0de9150a73cfe3480",
+    "prompt_manifest.json": "e8f3f202db0c91631c1f20560ef14db47ef944a31a60770fda0121d090087817",
+    "split.json": "4c00e0a57d69c482123b74b5b391e767585fbccb7dc91222a55da591a9a58deb",
+    "summary.json": "bafa5ab7dd8c94c267dd1a1d2d435023535d9c55ab2121fcdbc1824bb1696010"
+  },
+  "created_at": "2026-07-12T04:27:25.332619+00:00",
+  "environment": {
+    "accelerator": "Apple M2 Pro / MPS available; not used by deterministic smoke",
+    "implementation": "CPython",
+    "machine": "arm64",
+    "os": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.9.6"
+  },
+  "prompt_manifest_digest": "c0562f49640cbe6b33e59a6bcb2e673a2bd7f04cb6915a95f9805a7cf18bcbc2",
+  "registered_config": "configs/learning.json",
+  "registered_config_sha256": "32f80e508f39a0e514518573c743f76df6b90db6ef7a2e4cd3299a116b289ebc",
+  "run_id": "77771e943444d32dc716",
+  "schema_version": 1,
+  "seed_corpus": "data/real/seed_cases.jsonl",
+  "seed_corpus_sha256": "02586f1cfef1921d6660dc17692ead8a3762f2421c32b8c94bfb60289c8a92ab",
+  "seed_manifest": "data/real/seed_manifest.json",
+  "seed_manifest_sha256": "a168ed6b3bee1888e78b65312eda39b6d246834af50bae081a096bbb633c0447",
+  "test_evaluation_count": 1
+}

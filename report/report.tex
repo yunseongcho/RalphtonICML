@@ -1,0 +1,240 @@
+\documentclass{article}
+
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{icml2026}
+
+\newcommand{\NA}{\texttt{N/A (not run)}}
+\icmltitlerunning{Multi-Agent Peer Review Improvement Loop}
+
+\begin{document}
+
+\twocolumn[
+  \icmltitle{Evidence-Grounded Multi-Agent Peer Review:\\
+  A Reproducible Author--Reviewer--Chair Improvement Loop}
+  \icmltitlerunning{Multi-Agent Peer Review Improvement Loop}
+
+  \begin{icmlauthorlist}
+    \icmlauthor{Anonymous Authors}{anon}
+  \end{icmlauthorlist}
+  \icmlaffiliation{anon}{Anonymous Institution}
+  \icmlcorrespondingauthor{Anonymous Authors}{anonymous@example.com}
+  \vskip 0.3in
+]
+
+\printAffiliationsAndNotice{}
+
+\begin{abstract}
+We specify and audit an evidence-grounded, 14-agent paper-review pipeline built
+around the repository's nineteen context tasks and strict seven-field review
+form. The implementation separates extraction, specialist critique, synthesis,
+author rebuttal, and chair output; isolates reviewer and author memories; and
+keeps decisions out of paper-time requests. A public 20-case
+ReviewBench--ReviewRebuttal seed drives a leakage-safe, versioned calibration
+and memory loop. Canonical run \texttt{77771e943444d32dc716} verifies execution,
+convergence, best-state restoration, and one sealed test. It uses deterministic
+structural signals, not an LLM reviewer, and therefore provides pipeline
+evidence rather than reviewer-quality evidence.
+\end{abstract}
+
+\section{Scope and Local Contracts}
+
+The system is an offline research instrument for public review histories and
+author-authorized feedback. It is not permission to delegate a confidential or
+official ICML review to an LLM. ICML 2026 defines reviewer responsibilities and
+restricts LLM assistance~\cite{icml2026reviewer,icml2026llm}; the deployment
+boundary in Section~\ref{sec:limits} follows that policy.
+
+\paragraph{Nineteen context tasks.}
+The authoritative \texttt{prompts.py} map has four groups. \emph{Main Paper}
+(4) contains Paper Summary, Supplemental Summary, Introduction, and Related
+Works. \emph{Methodology} (6) contains Preliminaries, Framework, Training,
+Proofs, Inference and Application, and Method Summary. \emph{Experiments} (7)
+contains Datasets, Implementation Details, Evaluation Metrics, Quantitative
+Results, Qualitative Results, Ablation Study, and Results Summary.
+\emph{Conclusion} (2) contains Limitations and Future Works and Conclusion.
+Each extraction request must return separate \texttt{ANSWER} and
+\texttt{SOURCES} sections.
+
+The implemented parser wraps each extraction in an immutable
+\texttt{Evidence} record with task ID, answer, source strings, provenance, and
+a content-derived ID. \texttt{SharedContextStore} appends and deduplicates these
+records and returns frozen \texttt{ContextPacket} snapshots. Sources are still
+strings: page geometry, typed claims, issues, resolutions, and grounding checks
+are not implemented.
+
+\paragraph{Strict final form.}
+Only the chair emits \texttt{ReviewOutput}: Soundness, Presentation,
+Significance, and Originality are integers 1--4; Overall Recommendation is
+1--6; Confidence is 1--5; and Comment is nonempty text. The Markdown parser
+requires the exact seven headings, order, blank-line structure, integer types,
+and ranges. It does not establish factual accuracy, evidence grounding, or
+comment quality. This is a repository-specific subset of the full ICML form.
+
+\section{Team and Information Boundaries}
+
+The registry contains exactly 14 agents: five domain specialists
+(CV, Core ML, NLP, RecSys, General), six criterion specialists (Soundness,
+Presentation, Significance, Originality, Reproducibility, Ethics), one review
+synthesizer, one author, and one chair. A deterministic English/Korean keyword
+router selects at most two domain agents, using General only as fallback.
+
+\texttt{ReviewerOrchestrator} runs all nineteen extraction calls in a bounded
+pool, restores prompt order, and serializes the resulting packet. Routed domain
+and all criterion calls then run in parallel. Their critiques and the synthesis
+are free-form strings: prompts request strengths, weaknesses, questions, and
+evidence IDs, but no intermediate schema or grounding validator enforces them.
+The chair receives serialized context and synthesis and must pass only the
+strict final-form parser. With the optional author loop, the author receives
+context plus the validated initial review and returns a free-form rebuttal; the
+chair then receives that rebuttal and emits a second validated form. Neither
+chair call receives a human review or final decision.
+
+The live \texttt{review --state best\_state.json} path uses learned state with
+hard role separation. Lexical cue retrieval first excludes memory from the
+current forum. Raw training reviews and rebuttals remain internal;
+\texttt{memory\_guidance} converts a match into a paper-agnostic checklist.
+Domain, criterion, and synthesis requests receive only reviewer guidance, while
+the author receives only author guidance. Chair requests alone receive rubric
+weights, calibration scale and bias, and state-integrity metadata as advisory
+priors. Tests assert self-forum exclusion, raw-text non-disclosure, role
+separation, and delivery to both chair calls.
+
+The implementation also prepends an untrusted-document rule: paper and
+extracted text cannot override system instructions or reveal unavailable
+labels. It does not parse PDFs, detect hidden text, perform OCR comparison,
+retrieve semantic evidence, validate free-form critique provenance, or build a
+typed issue graph. Those remain required extensions, not reported capabilities.
+
+\section{Public Data and Versioned Update}
+
+OpenReview connects public submissions, reviews, responses, and decisions by
+forum~\cite{openreviewnotes,openreviewretrieval}. The canonical smoke does not
+claim a fresh API snapshot. \texttt{scripts/build\_real\_seed.py} joins public
+paper Markdown from ReviewBench (CC-BY-4.0) with reviews and rebuttal dialogues
+from ReviewRebuttal (Apache-2.0)~\cite{reviewbenchdataset,reviewrebuttaldataset}.
+It removes author identity fields and keeps cases with a paper, scored review,
+rebuttal, and decision. \texttt{data/real/seed\_manifest.json} records source
+URLs, source hashes, licenses, selected forum IDs, and output hash. The corpus
+SHA-256 begins \texttt{02586f1cfef1}.
+
+The seed has 20 papers, 77 reviews, and 31 rebuttal dialogues: five ICLR 2022,
+seven ICLR 2023, and eight NeurIPS 2022, with 15 accept and five reject
+decisions. There is no complete RecSys case, and ReviewBench text may be a
+revised public version. The implemented SHA-256 forum-ID split is deterministic
+and disjoint: 16 train, two development, and two sealed test forums under seed
+\texttt{ralphton-icml-real-seed-v1}. It does not yet group PDF/title
+near-duplicates or authors. Development and test IDs cannot enter either memory;
+the test fingerprint is checked and evaluated once after model selection.
+
+\texttt{LearningState} versions four rubric weights, linear overall-score scale
+and bias, prompt-manifest digest, bounded reviewer/author memories, and parent
+digest. It neither fine-tunes model weights nor rewrites prompts. On train data,
+\texttt{propose\_update} first estimates score calibration. For available final
+decisions it computes acceptance probabilities from calibrated overall scores
+and applies the clipped residual step
+\begin{equation}
+ b \leftarrow b + \eta\lambda_{\rm dec}\,
+ \operatorname{mean}(y_i-\hat p_i), \qquad \lambda_{\rm dec}=0.25.
+\end{equation}
+The decision is offline train supervision, never a chair input. A candidate is
+accepted only if development field coverage and complete-output coverage do not
+regress beyond tolerance and normalized MAE and Brier do not increase beyond
+tolerance. Thus decision calibration cannot bypass the per-metric gate.
+
+For version $t$, utility $U_t$ averages available field coverage, complete
+coverage, one minus normalized MAE, and one minus Brier score~\cite{brier1950}.
+Behavioral delta $D_t$ measures normalized score/probability change and Comment
+token-set distance. State delta $R_t$ averages rubric, scale, bias, prompt
+digest, and memory change. A plateau satisfies
+\begin{equation}
+ |U_t-U_{t-1}|\leq\epsilon_U,\quad D_t\leq\epsilon_D,\quad
+ R_t\leq\epsilon_R.
+\end{equation}
+After the minimum iteration, $p$ consecutive plateaus stop training; every
+accepted state competes with the best non-regressing state, which is restored
+before the single sealed-test call.
+
+\section{Canonical Smoke Result}
+
+Run \texttt{77771e943444d32dc716} identifies eight substantive artifacts in
+\path{artifacts/real_seed_v1}. For fixed inputs and configuration their hashes
+and run ID are deterministic; \texttt{run\_manifest.json.created\_at} is
+execution provenance and changes on rerun. The full-file
+\path{dev_review_preview.md} is wrapper-free Markdown that round-trips through
+the strict seven-field parser. Prompt-manifest and restored-state SHA-256 values
+are, respectively,
+\texttt{c0562f49\allowbreak{}640cbe6b\allowbreak{}33e59a6b\allowbreak{}cb2e673a\allowbreak{}2bd7f04c\allowbreak{}b6915a95\allowbreak{}f9805a7c\allowbreak{}f18bcbc2}
+and
+\texttt{de6d0295\allowbreak{}dbd26723\allowbreak{}e1e6e579\allowbreak{}824362ec\allowbreak{}9dab56f1\allowbreak{}a43eb827\allowbreak{}7c8ffcea\allowbreak{}857330e7}.
+
+The registered configuration used minimum/maximum iterations 3/40, patience 3,
+$(\epsilon_U,\epsilon_D,\epsilon_R)=(0.001,0.002,0.002)$, non-regression
+tolerance 0.02, learning rate 0.1, decision-calibration weight 0.25, and memory
+limit 64. It converged after five iterations and restored version 1 from best
+iteration 1, with 64 reviewer and 53 author memory items from train forums.
+Four later candidates were rejected; the final three zero-change iterations
+satisfied patience.
+
+\begin{table}[t]
+\caption{Canonical deterministic smoke. Coverage and complete-output coverage
+are 1.0000 throughout; development and test each contain two forums.}
+\label{tab:smoke}
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Stage & MAE & Brier & Utility \\
+\midrule
+Baseline dev & 0.7083 & 0.2863 & 0.8762 \\
+Best-state dev & 0.7083 & 0.2796 & 0.8778 \\
+Sealed test & 0.3750 & 0.1229 & 0.9426 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Development utility rose by 0.001656 solely because Brier improved; MAE was
+unchanged. The sealed test has no pre-update counterpart by design. With two
+development and two test forums, neither difference supports confidence
+intervals, domain comparison, or generalization. No LLM review, extraction
+quality study, human annotation, agent ablation, cost study, or robustness
+benchmark was run; those results remain \NA{}.
+
+\section{Policy, Limitations, and Reproducibility}
+\label{sec:limits}
+
+The system must not ingest confidential submissions or private reviewer
+discussion, and its output must not be submitted as an official ICML review.
+ICML's LLM and peer-review ethics policies require venue authorization,
+confidentiality, integrity, and human accountability
+~\cite{icml2026llm,icml2026ethics}. The current no-auth API client and public
+seed reduce access risk but do not establish blanket reuse rights. Historical
+decisions encode capacity, fashion, disagreement, and social bias; they are
+weak calibration supervision, not research truth.
+
+The current evidence core lacks source spans and issue resolution; specialist,
+synthesis, and rebuttal outputs are unvalidated strings; no PDF security or
+near-duplicate document pipeline exists; routing is lexical; RecSys is absent;
+and hosted models may have pretraining contamination or version drift. Human
+comment evaluation is costly and subjective. Any quality claim therefore needs
+a larger lawful corpus, document-level deduplication, registered LLM baselines
+and ablations, blinded domain experts, agreement statistics, robustness tests,
+cost reporting, and manifest-linked metric inputs. Formatting follows the
+official ICML 2026 author style~\cite{icml2026author}; it does not imply
+submission, acceptance, or endorsement.
+
+\paragraph{Conclusion.}
+The repository now provides a testable separation of paper-time evidence,
+role-specific guidance, offline supervision, calibrated update, convergence,
+and sealed evaluation. The canonical artifact establishes that these plumbing
+and integrity contracts execute; reviewer competence remains unmeasured.
+
+\clearpage
+\bibliographystyle{icml2026}
+\bibliography{references}
+
+\end{document}

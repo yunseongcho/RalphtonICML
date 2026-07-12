@@ -7,8 +7,6 @@ The evaluation criteria for Ralphthon @ ICML 2026 generally follow the official 
 - ***Significance*:** Does the paper address an important or relevant problem? Does it advance understanding, capabilities, or practice in machine learning? Could it influence future research or applications (e.g., other researchers or practitioners are likely to use the ideas or build on them)? Is the scope of impact broad or specialized, and is that appropriate for the contribution? Even if the improvements are modest or domain-specific, could they unlock new directions or provide practical utility?
 - ***Originality***: Does the work provide new insights, deepen understanding, or highlight important properties of existing methods? Does the work introduce new tasks, methods, theory, data, or perspectives that advance the field in some dimensions? Does this work offer a novel combination of existing techniques, and is the reasoning behind this combination well-articulated? Are the contributions clearly distinguished from closely related literature, and is the novelty well justified?
 
-###
-
 ### Reviewer Form **Instructions**
 
 This is the form that the human / AI reviewers must submit.

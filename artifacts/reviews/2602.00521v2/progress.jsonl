@@ -1,0 +1,34 @@
+{"agent_id": "extractor.1", "event": "cache_hit", "request_id": "11f6d6ec204a81345ac8305a", "response_characters": 5818, "stage": "extraction", "time_unix": 1783833616.629664}
+{"agent_id": "extractor.0", "event": "cache_hit", "request_id": "c1a15cd2eaa132e026ad9350", "response_characters": 12604, "stage": "extraction", "time_unix": 1783833616.629663}
+{"agent_id": "extractor.2", "event": "cache_hit", "request_id": "f56113943a6b910a6fb27457", "response_characters": 4895, "stage": "extraction", "time_unix": 1783833616.68366}
+{"agent_id": "extractor.3", "event": "cache_hit", "request_id": "e26ddc5d4a3df3306cf32602", "response_characters": 9420, "stage": "extraction", "time_unix": 1783833616.683667}
+{"agent_id": "extractor.4", "event": "cache_hit", "request_id": "d2d340c81eebd115f747b659", "response_characters": 8627, "stage": "extraction", "time_unix": 1783833616.737599}
+{"agent_id": "extractor.5", "event": "cache_hit", "request_id": "1c1e5c768cbe4dedc2398fda", "response_characters": 14594, "stage": "extraction", "time_unix": 1783833616.737762}
+{"agent_id": "extractor.7", "event": "cache_hit", "request_id": "dd74382248fa5614394ff01d", "response_characters": 4059, "stage": "extraction", "time_unix": 1783833616.792737}
+{"agent_id": "extractor.6", "event": "cache_hit", "request_id": "39190f3607640380bb80912f", "response_characters": 9106, "stage": "extraction", "time_unix": 1783833616.792757}
+{"agent_id": "extractor.8", "event": "cache_hit", "request_id": "97474720face0a4e76fb367a", "response_characters": 6600, "stage": "extraction", "time_unix": 1783833616.846674}
+{"agent_id": "extractor.9", "event": "cache_hit", "request_id": "d91ee9f20e30fb1ee4ad65e5", "response_characters": 6261, "stage": "extraction", "time_unix": 1783833616.8466802}
+{"agent_id": "extractor.11", "event": "cache_hit", "request_id": "85f64a127b66bb15a6a366af", "response_characters": 5426, "stage": "extraction", "time_unix": 1783833616.9012868}
+{"agent_id": "extractor.10", "event": "cache_hit", "request_id": "91d4223bdb53e7b464cd12f1", "response_characters": 3941, "stage": "extraction", "time_unix": 1783833616.9012852}
+{"agent_id": "extractor.13", "event": "cache_hit", "request_id": "5e3039e248614f1f13be059a", "response_characters": 4361, "stage": "extraction", "time_unix": 1783833616.955474}
+{"agent_id": "extractor.12", "event": "cache_hit", "request_id": "9282d886f865fd473eb63661", "response_characters": 10122, "stage": "extraction", "time_unix": 1783833616.9559832}
+{"agent_id": "extractor.14", "event": "cache_hit", "request_id": "ea6443469ea741212a9d8ef5", "response_characters": 7440, "stage": "extraction", "time_unix": 1783833617.006482}
+{"agent_id": "extractor.15", "event": "cache_hit", "request_id": "c7f66d3d8b356d642c2fa771", "response_characters": 5800, "stage": "extraction", "time_unix": 1783833617.0065868}
+{"agent_id": "extractor.16", "event": "cache_hit", "request_id": "783d6669a3653dd41b325dcf", "response_characters": 3437, "stage": "extraction", "time_unix": 1783833617.055199}
+{"agent_id": "extractor.17", "event": "cache_hit", "request_id": "ff7b3bd89127c9260f83d4d5", "response_characters": 3093, "stage": "extraction", "time_unix": 1783833617.0583029}
+{"agent_id": "extractor.18", "event": "cache_hit", "request_id": "c78ef0eb4cf0cfbff757d258", "response_characters": 1432, "stage": "extraction", "time_unix": 1783833617.1031759}
+{"agent_id": "domain.nlp", "event": "cache_hit", "request_id": "ae015e41e0f2e0d1205ccbd3", "response_characters": 10816, "stage": "domain_review", "time_unix": 1783833617.186238}
+{"agent_id": "domain.cv", "event": "cache_hit", "request_id": "055523bf29c1a3c0ea267e25", "response_characters": 8344, "stage": "domain_review", "time_unix": 1783833617.186656}
+{"agent_id": "criterion.presentation", "event": "cache_hit", "request_id": "fc20da8bc4494d6d47737abb", "response_characters": 8381, "stage": "criterion_review", "time_unix": 1783833617.238225}
+{"agent_id": "criterion.soundness", "event": "cache_hit", "request_id": "6085952966234f37cc868e79", "response_characters": 8015, "stage": "criterion_review", "time_unix": 1783833617.238333}
+{"agent_id": "criterion.significance", "event": "cache_hit", "request_id": "de158ef78f520bd039f7f7b4", "response_characters": 4557, "stage": "criterion_review", "time_unix": 1783833617.2928991}
+{"agent_id": "criterion.originality", "event": "cache_hit", "request_id": "34ec486642f3e9714b3a06c2", "response_characters": 6229, "stage": "criterion_review", "time_unix": 1783833617.292962}
+{"agent_id": "criterion.ethics", "event": "cache_hit", "request_id": "6384b6acb74ce63b43aaa236", "response_characters": 4954, "stage": "criterion_review", "time_unix": 1783833617.3457978}
+{"agent_id": "criterion.reproducibility", "event": "cache_hit", "request_id": "427ccbed59d7977c9b2f41f7", "response_characters": 6859, "stage": "criterion_review", "time_unix": 1783833617.3459032}
+{"agent_id": "review.synthesizer", "event": "cache_hit", "request_id": "73dd817733c8d6d111daaba2", "response_characters": 14705, "stage": "synthesis", "time_unix": 1783833617.399756}
+{"agent_id": "review.chair", "attempt": 1, "event": "start", "request_id": "a0ef256780e5feed87281a17", "stage": "final_review", "time_unix": 1783833617.449249}
+{"agent_id": "review.chair", "attempt": 1, "duration_seconds": 21.615185709, "event": "success", "request_id": "a0ef256780e5feed87281a17", "response_characters": 2736, "stage": "final_review", "time_unix": 1783833639.064251}
+{"agent_id": "author", "attempt": 1, "event": "start", "request_id": "f2cab0697a2ec68e1c11c244", "stage": "author_rebuttal", "time_unix": 1783833639.130195}
+{"agent_id": "author", "attempt": 1, "duration_seconds": 47.672952916, "event": "success", "request_id": "f2cab0697a2ec68e1c11c244", "response_characters": 6004, "stage": "author_rebuttal", "time_unix": 1783833686.802753}
+{"agent_id": "review.chair", "attempt": 1, "event": "start", "request_id": "bad3703a0f1e6efd454d8931", "stage": "final_review", "time_unix": 1783833686.8982131}
+{"agent_id": "review.chair", "attempt": 1, "duration_seconds": 17.76365625, "event": "success", "request_id": "bad3703a0f1e6efd454d8931", "response_characters": 2141, "stage": "final_review", "time_unix": 1783833704.66172}

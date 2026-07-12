@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=44", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ralphton-icml-reviewer"
+version = "0.1.0"
+description = "Evidence-grounded author/reviewer agent team and convergence loop"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+ralphton-icml = "ralphton_icml.cli:main"
+
+[tool.setuptools]
+packages = ["ralphton_icml"]
+py-modules = ["prompts", "review_prompts"]
+
+[tool.setuptools.data-files]
+"." = ["reviewer_instruction.md"]
